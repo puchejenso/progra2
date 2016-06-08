@@ -1,57 +1,19 @@
 //// 22 - MAYO - 2016
 #include <iostream>
-#include <fstream>
-#include <string.h>
-
+#include "fstream"
+#include <stack>
 using namespace std;
 
+fstream fp1("ArchivoClientes.txt", ios::in | ios::out|ios::binary /*| ios::trunc*/);
+fstream fp2("ArchivoEncomiendas.txt", ios::in | ios::out|ios::binary /*| ios::trunc*/);
 
-/// =============== ARCHIVOS =============== ///
+//////////////////////////////////////////////////////////////////////////////////////
 
-fstream fp1("ArchivoClientes.txt", ios::in | ios::out|ios::binary | ios::trunc);
-fstream fp2("ArchivoEncomiendas.txt", ios::in | ios::out|ios::binary | ios::trunc);
-
-
-/// =============== PRINCIPAL =============== ///
-
-struct Vertice{
-    string nombre;
-    struct Vertice *sig;
-    struct subLVerticeArco *sublistaArcos;
-    bool visitado;
-    Vertice (string n){
-        nombre = n;
-        sig = NULL;
-        sublistaArcos = NULL;
-        visitado = false;
-    }
-}*grafo;
-
-//sublista
-struct Arco{
-    struct Vertice *destino;
-    struct Vertice *origen;
-    int distancia;
-    struct Arco *sig;
-    Arco(int d, int c){
-        distancia = d;
-        destino=NULL;
-        origen=NULL;
-        sig = NULL;
-    }
-}*primeroArco;
-
-struct subLVerticeArco{
-    struct Arco *enlaceArco;
-    struct subLVerticeArco *sig;
-    subLVerticeArco(){
-        sig=NULL;
-    }
-};
+/// ================= PRINCIPAL ================= ///
 
 struct Cliente{
-    char nombre[10];
     int cedula;
+    char nombre[10];
     char direccion[10];
     int puntero;
 }regClientes;
@@ -64,19 +26,44 @@ struct Encomienda{
     int sig;
 }regEncomiendas;
 
+struct Vertice{
+    string nombre;
+    struct Vertice *sig;
+    struct subLVerticeArco * sublistaArcos;
+    bool visitado;
+    Vertice (string lug){
+        nombre = lug;
+        sig = NULL;
+        sublistaArcos = NULL;
+        visitado = false;
+    }
+}*grafo;
 
-//Arbol binario ordenado por ID lectura archivo encomienda.
-struct arbolEncomienda{
-    int id;
-    struct arbolEncomienda *izq, *der;
-    arbolEncomienda(int i){
-        id = i;
-        izq=NULL;
-        der=NULL;
+struct Arco{
+    int codigo;
+    int distancia;
+    struct Vertice *origen;
+    struct Vertice *destino;
+    struct Arco *sig;
+    Arco(int dist, int cod){
+        distancia = dist;
+        codigo = cod;
+        origen = NULL;
+        destino = NULL;
+        sig = NULL;
+    }
+}*primeroArco;
+
+struct subLVerticeArco{
+    struct Arco *enlaceArco;
+    struct subLVerticeArco *sig;
+    subLVerticeArco(){
+        enlaceArco = NULL;
+        sig = NULL;
     }
 };
 
-/// =============== BUSQUEDA =============== ///
+/// ================= BUSQUEDA ================= ///
 
 struct Vertice * buscarVertice(string ciudad){
     struct Vertice *temp = grafo;
@@ -94,27 +81,41 @@ struct Vertice * buscarVertice(string ciudad){
 }
 
 
+struct Arco *buscarArco(int c){
+    struct Arco *temp = primeroArco;
+    if(primeroArco==NULL)
+        return NULL;
+    else{
+        while(temp!=NULL){
+            if(temp->codigo == c)
+                return temp;
+            else
+                temp=temp->sig;
+        }
+        return NULL;
+    }
+};
 
-/// =============== INSERTAR PRINCIPAL =============== ///
+/// ================= INSERTAR ================= ///
 
 void insertarVertice(string nombre){
-
     struct Vertice *nVertice = new Vertice(nombre);
 
     if(grafo == NULL){
         grafo = nVertice;
+        cout<<"Vertice insertado Correctamente"<<endl;
+        return;
     }
-    else{
-        if(buscarVertice(nombre) != NULL){
-            cout<<"Datos Repetidos..";
-            return;
-        }
-        else{
-            nVertice->sig = grafo;
-            grafo = nVertice;
-        }
+    else if(buscarVertice(nombre) != NULL){
+        cout<<"Datos Repetidos..";
+        return;
     }
+    nVertice->sig = grafo;
+    grafo = nVertice;
+    cout<<"Vertice insertado Correctamente"<<endl;
 }
+
+
 
 void insertarArco(string o, string d, int distancia, int cod){
 
@@ -127,8 +128,8 @@ void insertarArco(string o, string d, int distancia, int cod){
 
     struct subLVerticeArco *temp = origen->sublistaArcos;
     while(temp != NULL){
-        if(temp->enlaceArco->destino == destino){
-            cout<<"Ya existe un camino que conesta estas ciudades..."<<endl;
+        if(temp->enlaceArco->destino == destino || temp->enlaceArco->origen == destino){
+            cout<<"Ya existe un camino que conecta estas ciudades..."<<endl;
             return;
         }
         temp = temp->sig;
@@ -148,32 +149,29 @@ void insertarArco(string o, string d, int distancia, int cod){
 
 
     //Enlaza origen con el destino
-    struct subLVerticeArco *newS = new subLVerticeArco;
+    struct subLVerticeArco *newS = new subLVerticeArco();
+    newS->enlaceArco = nArco;
     temp = origen->sublistaArcos;
     if(temp == NULL){
-        temp = newS;
-        temp->enlaceArco = nArco;
+        origen->sublistaArcos = newS;
     }
     else{
         while(temp->sig != NULL){
             temp = temp->sig;
         }
         temp->sig = newS;
-        temp->sig->enlaceArco = nArco;
     }
 
 
     temp = destino->sublistaArcos;
     if(temp == NULL){
-        temp = newS;
-        temp->enlaceArco = nArco;
+        destino->sublistaArcos = newS;
     }
     else{
         while(temp->sig != NULL){
             temp = temp->sig;
         }
         temp->sig = newS;
-        temp->sig->enlaceArco = nArco;
     }
     cout<<"Arco insertado Correctamente"<<endl;
 
@@ -194,17 +192,174 @@ void insertarCliente(char *nomb, int ced, char *direccion, int puntero){
 
 }
 
-/// =============== PLUS =============== ///
+/// ================= MODIFICAR ================= ///
+
+void modificarCamino(string o, string d, int dist){
+    //Busca si existe el arco y cambia su distancia
+    struct Arco *arco = primeroArco;
+    bool existe = false;
+    do{
+        if((arco->origen->nombre == o && arco->destino->nombre == d)||(arco->destino->nombre == o && arco->origen->nombre == d)){
+            arco->distancia = dist;
+            existe = true;
+            break;
+        }
+        arco = arco->sig;
+    }while(arco != NULL);
+    if(existe == false){
+        cout<<"El arco que desea modificar no existe"<<endl;
+        return;
+    }
+
+    //Busca el una de las ciudades y si uno de sus destinos es la otra ciudad cambia su distancia
+    struct Vertice *vertice = buscarVertice(o);
+    struct subLVerticeArco *arcos = vertice->sublistaArcos;
+    do{
+        if((arcos->enlaceArco->origen->nombre == d)||(arcos->enlaceArco->destino->nombre == d)){
+            arcos->enlaceArco->distancia = dist;
+            break;
+        }
+        else{
+            arcos = arcos->sig;
+        }
+    }while(arcos != NULL);
+
+    //Busca la otra ciudad y si uno de sus destinos es la otra ciudad cambia su distancia
+    vertice = buscarVertice(d);
+    arcos = vertice->sublistaArcos;
+    do{
+        if((arcos->enlaceArco->origen->nombre == o)||(arcos->enlaceArco->destino->nombre == o)){
+            arcos->enlaceArco->distancia = dist;
+            break;
+        }
+        else{
+            arcos = arcos->sig;
+        }
+    }while(arcos != NULL);
+}
+
+/// ================= BORRAR ================= ///
+
+bool borrarCamino(string o, string d){
+    struct Vertice *tempO = buscarVertice(o);
+    struct Vertice *tempD = buscarVertice(d);
+    if(tempO == NULL || tempD == NULL){
+        return false;
+    }
+
+    if(primeroArco == NULL){
+        return false;
+    }
+    struct Arco *arco = primeroArco;
+    int x = 0;
+    if(((arco->origen->nombre == tempO->nombre)&&(arco->destino->nombre == tempD->nombre))
+       || ((arco->origen->nombre == tempD->nombre)&&(arco->destino->nombre == tempO->nombre))){
+        primeroArco = arco->sig;
+        x++;
+    }
+    else{
+        while(arco->sig != NULL){
+            if(((arco->sig->origen == tempO)&&(arco->sig->destino == tempD))||((arco->sig->origen == tempD)&&(arco->sig->destino == tempO))){
+                arco->sig = arco->sig->sig;
+                x++;
+                break;
+            }
+            arco = arco->sig;
+        }
+    }
+    if(x == 0){
+        return false;
+    }
+    struct subLVerticeArco *listArcosO = tempO->sublistaArcos;
+    if(listArcosO->enlaceArco->destino == tempD  || listArcosO->enlaceArco->origen == tempD){
+        tempO->sublistaArcos = listArcosO->sig;
+    }
+    else{
+        while(listArcosO != NULL){
+            if(listArcosO->sig->enlaceArco->destino == tempD || listArcosO->sig->enlaceArco->origen == tempD){
+                listArcosO->sig = listArcosO->sig->sig;
+                break;
+            }
+            listArcosO = listArcosO->sig;
+        }
+    }
+
+    struct subLVerticeArco *listArcosD = tempD->sublistaArcos;
+    if(listArcosD->enlaceArco->origen == tempO || listArcosD->enlaceArco->destino == tempO){
+        tempD->sublistaArcos = listArcosD->sig;
+    }
+    else{
+        while(listArcosD->sig != NULL){
+            if(listArcosD->sig->enlaceArco->destino == tempO || listArcosD->sig->enlaceArco->origen == tempO){
+                listArcosD->sig = listArcosD->sig->sig;
+                break;
+            }
+            listArcosD = listArcosD->sig;
+        }
+    }
+    return true;
+};
+
+void borrarCiudad(string n){
+    struct Vertice *v = buscarVertice(n);
+    if(v == NULL){
+        return;
+    }
+    struct Vertice *vertice = grafo;
+    while(vertice != NULL){
+        borrarCamino(n, vertice->nombre);
+        vertice = vertice->sig;
+    }
+
+    vertice = grafo;
+    if(vertice->nombre == n){
+        grafo = grafo->sig;
+    }
+    else{
+        while(vertice->sig != NULL){
+            if(vertice->sig->nombre == n){
+                vertice->sig = vertice->sig->sig;
+                break;
+            }
+            vertice = vertice->sig;
+        }
+    }
+}
+
+
+
+
+/// ================= PLUS ================= ///
 
 void desmarcar(){
     struct Vertice *temp = grafo;
-    while(temp != NULL){
+    while(temp!= NULL){
         temp->visitado = false;
         temp = temp->sig;
     }
 }
 
-///METODOS PARA ESCRIBIR EN LOS ARCHIVOS
+void conexo(Vertice vertice){
+    if(vertice->visitado == true || vertice == NULL){
+        return;
+    }
+
+    vertice->visitado = true;
+    struct Arco *arcos = primeroArco;
+    while(arcos != NULL){
+        if(arcos->origen == vertice){
+            conexo(arcos->destino);
+        }
+        else if(arcos->destino == vertice){
+            conexo(arcos->origen);
+        }
+        arcos = arcos->sig;
+    }
+}
+
+
+/// ================= ARCHIVOS ================= ///
+
 
 void escribirArchivoClientes(struct Cliente regClientes){
     fp1.write(reinterpret_cast<char *> (&regClientes), sizeof(regClientes));
@@ -214,7 +369,9 @@ void escribirArchivoEncomiendas(struct Encomienda regEncomiendas){
     fp2.write(reinterpret_cast<char *> (&regEncomiendas), sizeof(regEncomiendas));
 }
 
-///METODOS PARA LEER LOS ARCHIVOS
+//////////////////////////////////////////////////////////////////////////////////////
+
+
 void leerArchivoClientes(){
     fstream temp("ArchivoClientes.txt", ios::in | ios::out |ios::binary);// |ios::trunc);
 
@@ -223,7 +380,7 @@ void leerArchivoClientes(){
 
         temp.read(reinterpret_cast<char *> (&regClientes), sizeof(regClientes));
         if(temp.eof() != true)
-            cout<<"Cedula: "<<regClientes.cedula<<"\tCliente: "<<regClientes.nombre<<"\t\tDireccion: "<<regClientes.direccion<<endl;
+            cout<<"Cedula = "<<regClientes.cedula<<" Cliente = "<<regClientes.nombre<<" Direccion = "<<regClientes.direccion<<endl;
     }
     temp.close();
 }
@@ -236,24 +393,56 @@ void leerArchivoEncomiendas(){
 
         temp.read(reinterpret_cast<char *> (&regEncomiendas), sizeof(regEncomiendas));
         if(temp.eof() != true)
-            cout<<"Codigo: "<<regEncomiendas.id<<"\tDescripcion: "<<regEncomiendas.descripcion<<"\tPeso: "<<regEncomiendas.peso<<"\tDestino: "<<regEncomiendas.destino<<endl;
+            cout<<"Codigo = "<<regEncomiendas.id<<" Descripcion = "<<regEncomiendas.descripcion<<" Peso = "<<regEncomiendas.peso<<" Destino = "<<regEncomiendas.destino<<endl;
     }
     temp.close();
 }
 
+//lee una registro en especifico
+void leerArchivoClientes(int posicion){
 
-/// =============== CARGAR =============== ///
+    fp1.seekg(posicion *sizeof(regClientes));
+
+    fp1.read(reinterpret_cast<char *> (&regClientes), sizeof(regClientes));
+    cout<<"Cedula = "<<regClientes.cedula<<" Cliente = "<<regClientes.nombre<<" Direccion = "<<regClientes.direccion<<endl;
+}
+
+void leerArchivoEncomiendas(int posicion){
+
+    fp2.seekg(posicion *sizeof(regEncomiendas));
+
+    fp2.read(reinterpret_cast<char *> (&regEncomiendas), sizeof(regEncomiendas));
+    cout<<" ID = "<<regEncomiendas.id<<" Descripcion = "<<regEncomiendas.descripcion<<" Peso = "<<regEncomiendas.peso<<" Destino = "<<regEncomiendas.destino<<endl;
+}
+/// ================== CONSULTAS =================== ///
+//Determinar si el grafo de transporte es conexo: si existe un arco entre cualquier par de vértices.
+
+bool Consulta1(){
+    struct Vertice *vertice = grafo;
+    desmarcar();
+    conexo(vertice);
+    while(vertice != NULL){
+        if(vertice->visitado == false){
+            return false;
+        }
+        vertice = vertice->sig;
+    }
+    desmarcar();
+    return true;
+
+}
+
+/// ================= CARGAR DATOS ================= ///
+
+void cuenta(){
+
+}
 
 void cargarDatos(){
-
-
 }
 
 
-int main() {
-    insertarCliente("Stward",2014,"Talamanca", 2);
-    leerArchivoClientes();
-    cout<<endl;
-
-    return 0;
+void main() {
+    return;
 }
+
