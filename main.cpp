@@ -1,7 +1,7 @@
 //// 22 - MAYO - 2016
 #include <iostream>
 #include "fstream"
-#include <stack>
+
 using namespace std;
 
 fstream fp1("ArchivoClientes.txt", ios::in | ios::out|ios::binary /*| ios::trunc*/);
@@ -63,6 +63,8 @@ struct subLVerticeArco{
     }
 };
 
+
+
 /// ================= BUSQUEDA ================= ///
 
 struct Vertice * buscarVertice(string ciudad){
@@ -95,6 +97,8 @@ struct Arco *buscarArco(int c){
         return NULL;
     }
 };
+
+
 
 /// ================= INSERTAR ================= ///
 
@@ -192,6 +196,8 @@ void insertarCliente(char *nomb, int ced, char *direccion, int puntero){
 
 }
 
+
+
 /// ================= MODIFICAR ================= ///
 
 void modificarCamino(string o, string d, int dist){
@@ -237,6 +243,7 @@ void modificarCamino(string o, string d, int dist){
         }
     }while(arcos != NULL);
 }
+
 
 /// ================= BORRAR ================= ///
 
@@ -327,8 +334,6 @@ void borrarCiudad(string n){
 }
 
 
-
-
 /// ================= PLUS ================= ///
 
 void desmarcar(){
@@ -339,8 +344,12 @@ void desmarcar(){
     }
 }
 
-void conexo(Vertice vertice){
-    if(vertice->visitado == true || vertice == NULL){
+void conexo(Vertice *vertice){
+
+    if(vertice == NULL){
+        return;
+    }
+    else if(vertice->visitado == true){
         return;
     }
 
@@ -414,9 +423,12 @@ void leerArchivoEncomiendas(int posicion){
     fp2.read(reinterpret_cast<char *> (&regEncomiendas), sizeof(regEncomiendas));
     cout<<" ID = "<<regEncomiendas.id<<" Descripcion = "<<regEncomiendas.descripcion<<" Peso = "<<regEncomiendas.peso<<" Destino = "<<regEncomiendas.destino<<endl;
 }
-/// ================== CONSULTAS =================== ///
-//Determinar si el grafo de transporte es conexo: si existe un arco entre cualquier par de vértices.
 
+
+
+/// ================== CONSULTAS =================== ///
+
+//Determinar si el grafo de transporte es conexo: si existe un arco entre cualquier par de vértices.
 bool Consulta1(){
     struct Vertice *vertice = grafo;
     desmarcar();
@@ -434,15 +446,11 @@ bool Consulta1(){
 
 /// ================= CARGAR DATOS ================= ///
 
-void cuenta(){
-
-}
 
 void cargarDatos(){
 }
 
 
-void main() {
-    return;
+int main() {
+    return 0;
 }
-
