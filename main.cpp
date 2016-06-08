@@ -1,6 +1,7 @@
 //// 22 - MAYO - 2016
 #include <iostream>
 #include "fstream"
+#include <string.h>
 
 using namespace std;
 
